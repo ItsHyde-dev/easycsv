@@ -84,7 +84,7 @@ pub fn print_exclude(path: String, exclude: Vec<String>, limit: u32) {
     }
 }
 
-fn get_selected_header_position_list(reader: &mut Reader<File>, select: Vec<String>) -> Vec<usize> {
+pub fn get_selected_header_position_list(reader: &mut Reader<File>, select: Vec<String>) -> Vec<usize> {
     let mut pos_list: Vec<usize> = Vec::new();
 
     for col in select {

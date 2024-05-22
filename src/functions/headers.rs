@@ -1,9 +1,8 @@
-use std::fs::File;
+use csv::StringRecord;
 
-use csv::{Reader, StringRecord};
-
-pub fn print_headers(reader: &mut Reader<File>) {
-    let headers = reader
+pub fn print_headers(path: String) {
+    let headers = csv::Reader::from_path(path)
+        .unwrap()
         .headers()
         .unwrap_or(&StringRecord::new())
         .iter()

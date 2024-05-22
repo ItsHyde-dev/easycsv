@@ -1,5 +1,3 @@
-use std::borrow::BorrowMut;
-
 use clap::ArgAction::Help;
 use clap::Parser;
 mod functions;
@@ -16,7 +14,7 @@ struct Args {
     count: bool,
 
     // Show only headers
-    #[arg(long, short = 'H')]
+    #[arg(long, short = 'H', long_help = "Show the headers of the csv file")]
     show_headers: bool,
 
     #[arg(long, action = Help)]
@@ -38,6 +36,12 @@ struct Args {
     )]
     exclude: Option<Vec<String>>,
 
+    #[arg(
+        long = "dc",
+        long_help = "Duplicate count for rows specified. use multiple times to get counts for multiple rows"
+    )]
+    duplicate_count: Option<Vec<String>>,
+
     // path to the file
     file_path: String,
 }
@@ -49,11 +53,7 @@ fn main() {
 
 fn switch_args(args: Args) {
     if args.show_headers {
-        return functions::headers::print_headers(
-            csv::Reader::from_path(&args.file_path)
-                .unwrap()
-                .borrow_mut(),
-        );
+        return functions::headers::print_headers(args.file_path);
     }
 
     if args.count {
@@ -68,6 +68,10 @@ fn switch_args(args: Args) {
     if let Some(select) = args.select {
         let limit = args.head.unwrap_or(0);
         return functions::select::print_select(args.file_path, select, limit);
+    }
+
+    if let Some(duplicate_count) = args.duplicate_count {
+        return functions::duplicate::print_duplicates(args.file_path, duplicate_count);
     }
 
     if let Some(head) = args.head {
