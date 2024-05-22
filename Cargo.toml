@@ -1,5 +1,5 @@
 [package]
-name = "rust-csv-parser"
+name = "rct"
 version = "0.1.0"
 edition = "2021"
 
