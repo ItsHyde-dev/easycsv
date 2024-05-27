@@ -70,12 +70,15 @@ pub fn print_exclude(path: String, exclude: Vec<String>, limit: u32) {
                     .enumerate()
                     .filter_map(|(col_number, val)| {
                         if !pos_list.contains(&col_number) {
-                            return Some(val);
+                            if val.contains(",") {
+                                return Some(format!("\"{}\"", val));
+                            }
+                            return Some(val.to_string());
                         } else {
                             return None;
                         }
                     })
-                    .collect::<Vec<&str>>()
+                    .collect::<Vec<String>>()
                     .join(",");
 
                 println!("{}", filtered_row);
@@ -84,7 +87,10 @@ pub fn print_exclude(path: String, exclude: Vec<String>, limit: u32) {
     }
 }
 
-pub fn get_selected_header_position_list(reader: &mut Reader<File>, select: Vec<String>) -> Vec<usize> {
+pub fn get_selected_header_position_list(
+    reader: &mut Reader<File>,
+    select: Vec<String>,
+) -> Vec<usize> {
     let mut pos_list: Vec<usize> = Vec::new();
 
     for col in select {

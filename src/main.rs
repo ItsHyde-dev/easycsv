@@ -42,6 +42,9 @@ struct Args {
     )]
     duplicate_count: Option<Vec<String>>,
 
+    #[arg(short = 'j', long)]
+    to_json: Option<String>,
+
     // path to the file
     file_path: String,
 }
@@ -72,6 +75,11 @@ fn switch_args(args: Args) {
 
     if let Some(duplicate_count) = args.duplicate_count {
         return functions::duplicate::print_duplicates(args.file_path, duplicate_count);
+    }
+
+    if let Some(json_structure) = args.to_json {
+        let limit = args.head.unwrap_or(0);
+        return functions::json_functions::print_json(args.file_path, json_structure, limit);
     }
 
     if let Some(head) = args.head {
