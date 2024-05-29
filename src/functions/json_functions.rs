@@ -1,14 +1,11 @@
 use csv::StringRecord;
 
+// NOTE: This function can be improved in many ways.
+// 1. Check the placeholders and throw an error if any of them are not part of the headers
+// 2. Allow iterators in the json structure
+// 3. Allow the json to be supplied via a file
+
 pub fn print_json(path: String, json_structure: String, limit: u32) {
-    let json_sample: Result<serde_json::Value, serde_json::Error> =
-        serde_json::from_str(&json_structure);
-
-    if json_sample.is_err() {
-        println!("Json template is invalid");
-        return;
-    }
-
     let mut response: Vec<String> = Vec::new();
 
     let mut reader = csv::Reader::from_path(path.clone()).unwrap();
@@ -18,15 +15,19 @@ pub fn print_json(path: String, json_structure: String, limit: u32) {
             return;
         }
 
+        let mut res_obj = json_structure.clone();
+
         record
             .unwrap_or(StringRecord::new())
             .iter()
             .enumerate()
             .for_each(|(index, data)| {
                 let header = &csv_headers[index];
-                let from = format!("{{{header}}}");
-                response.push(json_structure.replace(&from, data));
+                let from = "{{header}}".to_string().replace("header", header);
+                res_obj = res_obj.replace(&from, data)
             });
+
+        response.push(res_obj);
     });
 
     println!("{}", format!("[{}]", response.join(",")));

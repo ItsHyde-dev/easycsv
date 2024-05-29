@@ -8,7 +8,19 @@ pub fn print_head(path: String, head: u32) {
         let head_iter = reader.records().take(head as usize);
         for rec in head_iter {
             if let Ok(rec) = rec {
-                println!("{}", rec.iter().collect::<Vec<&str>>().join(","))
+                println!(
+                    "{}",
+                    rec.iter()
+                        .map(|val| {
+                            if val.contains(",") {
+                                return format!("\"{}\"", val);
+                            }
+
+                            return val.to_string();
+                        })
+                        .collect::<Vec<String>>()
+                        .join(",")
+                )
             }
         }
     }

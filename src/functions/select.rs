@@ -28,13 +28,16 @@ pub fn print_select(path: String, select: Vec<String>, limit: u32) {
                     .iter()
                     .enumerate()
                     .filter_map(|(col_number, val)| {
-                        if pos_list.contains(&col_number) {
-                            return Some(val);
+                        if !pos_list.contains(&col_number) {
+                            if val.contains(",") {
+                                return Some(format!("\"{}\"", val));
+                            }
+                            return Some(val.to_string());
                         } else {
                             return None;
                         }
                     })
-                    .collect::<Vec<&str>>()
+                    .collect::<Vec<String>>()
                     .join(",");
 
                 println!("{}", filtered_row);
