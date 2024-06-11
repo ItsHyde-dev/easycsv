@@ -1,13 +1,9 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fs::File,
-};
+use std::{collections::{HashMap, HashSet}, io::Read};
 
 use csv::{Reader, StringRecord};
 
 use super::select::get_selected_header_position_list;
-pub fn print_duplicates(path: String, dup_rows: Vec<String>) {
-    let mut reader = csv::Reader::from_path(path).unwrap();
+pub fn print_duplicates(mut reader: Reader<Box<dyn Read>>, dup_rows: Vec<String>) {
     let pos_list = get_selected_header_position_list(&mut reader, dup_rows.clone());
     let pos_map = get_selected_header_position_map(&mut reader, dup_rows);
 
@@ -61,7 +57,7 @@ pub fn print_duplicates(path: String, dup_rows: Vec<String>) {
 }
 
 pub fn get_selected_header_position_map(
-    reader: &mut Reader<File>,
+    reader: &mut Reader<Box<dyn Read>>,
     select: Vec<String>,
 ) -> HashMap<usize, String> {
     let mut pos_list: HashMap<usize, String> = HashMap::new();

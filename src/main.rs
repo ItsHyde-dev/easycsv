@@ -1,6 +1,11 @@
+use std::fs::File;
+use std::io::{self, Read};
+
 use clap::ArgAction::Help;
-use clap::Parser;
+use clap::{Parser, Subcommand};
+use csv::ReaderBuilder;
 mod functions;
+mod modules;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None, disable_help_flag = true)]
@@ -45,44 +50,47 @@ struct Args {
     #[arg(short = 'j', long)]
     to_json: Option<String>,
 
+    #[command(subcommand)]
+    commands: Option<Commands>,
+
     // path to the file
-    file_path: String,
+    file_path: Option<String>,
+}
+
+#[derive(Subcommand, Debug)]
+enum Commands {
+    Find {
+        #[arg(short, long)]
+        columns: Option<Vec<String>>,
+
+        #[arg(long, action = Help)]
+        help: Option<bool>,
+
+        query: String,
+    },
 }
 
 fn main() {
     let args = Args::parse();
-    switch_args(args)
-}
 
-fn switch_args(args: Args) {
-    if args.show_headers {
-        return functions::headers::print_headers(args.file_path);
+    // ignore the sigpipe error
+    unsafe {
+        libc::signal(libc::SIGPIPE, libc::SIG_DFL);
     }
 
-    if args.count {
-        return functions::count::print_count(args.file_path);
-    }
+    // check if we are getting a stream from the terminal
+    let input: Box<dyn Read> = if atty::isnt(atty::Stream::Stdin) {
+        // If there's data being piped to the program
+        Box::new(io::stdin())
+    } else if let Some(ref file_path) = args.file_path {
+        // If a file path is provided as an argument
+        Box::new(File::open(file_path).expect("Unable to open file"))
+    } else {
+        eprintln!("No input provided. Use either a file path or pipe data to the program.");
+        std::process::exit(1);
+    };
 
-    if let Some(exclude) = args.exclude {
-        let limit = args.head.unwrap_or(0);
-        return functions::select::print_exclude(args.file_path, exclude, limit);
-    }
+    let csv_reader = ReaderBuilder::new().from_reader(input);
 
-    if let Some(select) = args.select {
-        let limit = args.head.unwrap_or(0);
-        return functions::select::print_select(args.file_path, select, limit);
-    }
-
-    if let Some(duplicate_count) = args.duplicate_count {
-        return functions::duplicate::print_duplicates(args.file_path, duplicate_count);
-    }
-
-    if let Some(json_structure) = args.to_json {
-        let limit = args.head.unwrap_or(0);
-        return functions::json_functions::print_json(args.file_path, json_structure, limit);
-    }
-
-    if let Some(head) = args.head {
-        return functions::head::print_head(args.file_path, head);
-    }
+    modules::arg_parser::switch_args(args, csv_reader)
 }

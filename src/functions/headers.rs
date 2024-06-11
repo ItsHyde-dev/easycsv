@@ -1,8 +1,9 @@
-use csv::StringRecord;
+use std::io::Read;
 
-pub fn print_headers(path: String) {
-    let headers = csv::Reader::from_path(path)
-        .unwrap()
+use csv::{Reader, StringRecord};
+
+pub fn print_headers(reader: &mut Reader<Box<dyn Read>>) {
+    let headers = reader
         .headers()
         .unwrap_or(&StringRecord::new())
         .iter()
