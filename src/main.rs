@@ -7,7 +7,7 @@ use csv::ReaderBuilder;
 mod functions;
 mod modules;
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 #[command(version, about, long_about = None, disable_help_flag = true)]
 struct Args {
     /// Number of rows to display
@@ -28,17 +28,11 @@ struct Args {
     #[arg(
         long,
         short,
-        long_help = "Select columns from the csv to show.\nCannot use with exclude.",
-        conflicts_with = "exclude"
+        long_help = "Select columns from the csv to show.",
     )]
     select: Option<Vec<String>>,
 
-    #[arg(
-        long,
-        short,
-        long_help = "Select columns from the csv to exclude.\nCannot use with select.",
-        conflicts_with = "select"
-    )]
+    #[arg(long, short, long_help = "Select columns from the csv to exclude.")]
     exclude: Option<Vec<String>>,
 
     #[arg(
@@ -48,7 +42,7 @@ struct Args {
     duplicate_count: Option<Vec<String>>,
 
     #[arg(short = 'j', long)]
-    to_json: Option<String>,
+    display_json: bool,
 
     #[command(subcommand)]
     commands: Option<Commands>,
@@ -57,7 +51,7 @@ struct Args {
     file_path: Option<String>,
 }
 
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand, Debug, Clone)]
 enum Commands {
     Find {
         #[arg(short, long)]
@@ -65,6 +59,10 @@ enum Commands {
 
         #[arg(long, action = Help)]
         help: Option<bool>,
+
+        /// Number of rows to display
+        #[arg(long, short)]
+        head: Option<u32>,
 
         query: String,
     },
@@ -90,5 +88,5 @@ fn main() {
     let csv_reader = ReaderBuilder::new().from_reader(input);
 
     // modules::arg_parser::switch_args(args, csv_reader)
-    modules::arg_parser::switch_args_v2(args, csv_reader)
+    modules::arg_parser::switch_args(args, csv_reader)
 }

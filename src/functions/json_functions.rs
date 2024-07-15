@@ -7,6 +7,8 @@ use csv::{Reader, StringRecord};
 // 2. Allow iterators in the json structure
 // 3. Allow the json to be supplied via a file
 
+// DO NOT DELETE CURRENTLY NOT SUPPORTED
+#[allow(dead_code)]
 pub fn print_json(mut reader: Reader<Box<dyn Read>>, json_structure: String, limit: u32) {
     let mut response: Vec<String> = Vec::new();
 
