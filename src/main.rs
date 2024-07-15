@@ -78,12 +78,9 @@ fn main() {
         libc::signal(libc::SIGPIPE, libc::SIG_DFL);
     }
 
-    // check if we are getting a stream from the terminal
     let input: Box<dyn Read> = if atty::isnt(atty::Stream::Stdin) {
-        // If there's data being piped to the program
         Box::new(io::stdin())
     } else if let Some(ref file_path) = args.file_path {
-        // If a file path is provided as an argument
         Box::new(File::open(file_path).expect("Unable to open file"))
     } else {
         eprintln!("No input provided. Use either a file path or pipe data to the program.");
@@ -92,5 +89,6 @@ fn main() {
 
     let csv_reader = ReaderBuilder::new().from_reader(input);
 
-    modules::arg_parser::switch_args(args, csv_reader)
+    // modules::arg_parser::switch_args(args, csv_reader)
+    modules::arg_parser::switch_args_v2(args, csv_reader)
 }

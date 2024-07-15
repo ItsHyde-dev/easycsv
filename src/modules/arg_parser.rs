@@ -1,8 +1,12 @@
+use crate::functions::find::find;
 use std::io::Read;
 
-use csv::{Reader, StringRecord};
+use csv::{Error, Reader, StringRecord};
 
-use crate::{functions, Args, Commands};
+use crate::{
+    functions::{self},
+    Args, Commands,
+};
 
 pub fn switch_args(args: Args, mut reader: Reader<Box<dyn Read>>) {
     match args.commands {
@@ -44,40 +48,103 @@ pub fn switch_args(args: Args, mut reader: Reader<Box<dyn Read>>) {
     }
 }
 
-fn switch_subcommands(commands: Commands, mut reader: Reader<Box<dyn Read>>) {
+fn switch_subcommands(commands: Commands, reader: Reader<Box<dyn Read>>) {
     match commands {
-        Commands::Find { columns, query, .. } => {
-            functions::headers::print_headers(&mut reader);
-            let mut allowed_header_positions: Vec<usize> = Vec::new();
-
-            if columns.is_some() {
-                allowed_header_positions = functions::select::get_selected_header_position_list(
-                    &mut reader,
-                    columns.unwrap(),
-                )
-            }
-
-            reader.records().for_each(|r| {
-                let mut should_print: bool = false;
-                let record = r.unwrap_or(StringRecord::new()).clone();
-
-                for (idx, val) in record.into_iter().enumerate() {
-                    if allowed_header_positions.len() > 0
-                        && !allowed_header_positions.contains(&idx)
-                    {
-                        continue;
-                    } else {
-                        if val.contains(&query) {
-                            should_print = true;
-                            break;
-                        }
-                    }
-                }
-
-                if should_print {
-                    println!("{}", record.iter().collect::<Vec<&str>>().join(","));
-                }
-            })
-        }
+        Commands::Find { columns, query, .. } => find(columns, query, reader),
     }
+}
+
+pub fn switch_args_v2(args: Args, mut reader: Reader<Box<dyn Read>>) {
+    let headers: Vec<String> = reader
+        .headers()
+        .unwrap()
+        .iter()
+        .map(|x| x.to_owned())
+        .collect();
+
+    let selected = select(
+        Box::new(reader.into_records()),
+        get_selected(
+            args.select.unwrap_or(Vec::new()),
+            args.exclude.unwrap_or(Vec::new()),
+            &headers,
+        ),
+    );
+
+    let filtered = filter(selected, args.head);
+
+    // aggregation step
+    if args.count {
+        println!("Counting...");
+        println!("{}", filtered.count());
+        return;
+    } else if let Some(columns) = args.duplicate_count {
+        functions::duplicate::print_duplicates_v2(filtered, columns, &headers);
+        return;
+    }
+
+    // TODO: will add json support later
+    let display_method = DisplayMethod::CSV;
+
+    display(display_method, filtered, &headers);
+}
+
+enum DisplayMethod {
+    CSV,
+    // JSON,
+}
+
+fn display(
+    display_method: DisplayMethod,
+    i: Box<dyn Iterator<Item = StringRecord>>,
+    headers: &Vec<String>,
+) {
+    println!("{}", headers.join(","));
+    match display_method {
+        DisplayMethod::CSV => i.for_each(|x| {
+            println!("{}", x.as_slice());
+        }),
+    }
+}
+
+fn get_selected(select: Vec<String>, exclude: Vec<String>, headers: &Vec<String>) -> Vec<usize> {
+    let select = match select.len() {
+        0 => headers.clone(),
+        _ => select,
+    };
+
+    return headers
+        .iter()
+        .enumerate()
+        .filter(|(_, x)| select.contains(&x) && !exclude.contains(&x))
+        .map(|(i, _)| i)
+        .collect();
+}
+
+fn select<'a>(
+    i: Box<dyn Iterator<Item = Result<StringRecord, Error>> + 'a>,
+    selected_headers: Vec<usize>,
+) -> Box<dyn Iterator<Item = StringRecord> + 'a> {
+    let s = i.map(move |rec| {
+        rec.unwrap_or(StringRecord::new())
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| selected_headers.contains(&i))
+            .map(|(_, x)| x.to_owned())
+            .collect::<StringRecord>()
+    });
+
+    return Box::new(s);
+}
+
+fn filter<'a>(
+    i: Box<dyn Iterator<Item = StringRecord> + 'a>,
+    // filters
+    head: Option<u32>,
+) -> Box<dyn Iterator<Item = StringRecord> + 'a> {
+    if let Some(head) = head {
+        return Box::new(i.take(head as usize));
+    }
+
+    return Box::new(i);
 }

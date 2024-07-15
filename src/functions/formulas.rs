@@ -12,12 +12,12 @@ pub fn print_with_formula(path: String, formula: String) {}
 */
 
 struct ExecNode {
-    operator: String,
+    operator: Option<String>,
+    val: Option<String>,
     left: Box<ExecNode>,
-    rigth: Box<ExecNode>,
+    right: Box<ExecNode>,
 }
 
-fn parse_formula(formula: String) {
-}
+fn parse_formula(formula: String) {}
 
 fn add(a: f64, b: f64) -> f64 {}
