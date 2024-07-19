@@ -88,6 +88,9 @@ fn tokenize(query: String) -> Vec<Token> {
             continue;
         }
 
+
+        // TODO: Add checks on double sided operators for string literals on both sides.
+
         if c == EQUALS {
             add_string_literal(&mut raw_token_list, &mut buffer);
             raw_token_list.push(Token {
