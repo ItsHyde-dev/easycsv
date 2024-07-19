@@ -1,9 +1,14 @@
+use std::collections::HashMap;
+
 use csv::StringRecord;
+
+use crate::functions::duplicate::get_selected_header_position_map;
 
 #[derive(Debug, PartialEq)]
 enum TokenType {
     Equal,
     NotEqual,
+    Contains,
     StringLiteral,
     And,
     Or,
@@ -18,6 +23,7 @@ struct Token {
 
 const ESCAPE: char = '\\';
 const SINGLE_QUOTE: char = '\'';
+const DOUBLE_QUOTE: char = '\"';
 const EQUALS: char = '=';
 const EXCLAMATION: char = '!';
 const WHITESPACE: char = ' ';
@@ -25,13 +31,35 @@ const WHITESPACE: char = ' ';
 pub fn find(
     i: Box<dyn Iterator<Item = StringRecord>>,
     query: String,
+    headers: &Vec<String>,
 ) -> Box<dyn Iterator<Item = StringRecord>> {
     let token_list = tokenize(query);
     println!("{:?}", token_list);
 
+    // sanitize the token list to check if there are any problems with the syntax
+    if !validate_token_list(&token_list) {
+        panic!("Error in find syntax");
+    }
+
     // build the execution tree
+    // get the conditions
+
+
+    i.enumerate().filter(|(i, x)| {
+        // TODO: Add the conditions here after parsing
+    });
 
     i
+}
+
+fn get_header_map(headers: &Vec<String>) -> HashMap<usize, String> {
+    let res: HashMap<usize, String> = HashMap::new();
+
+    for (i, h) in headers.iter().enumerate() {
+        res.insert(i, h);
+    }
+
+    return res;
 }
 
 fn add_string_literal(token_list: &mut Vec<Token>, buffer: &mut String) {
@@ -50,12 +78,6 @@ fn add_string_literal(token_list: &mut Vec<Token>, buffer: &mut String) {
 fn tokenize(query: String) -> Vec<Token> {
     let mut buffer = String::new();
     let mut raw_token_list: Vec<Token> = Vec::new();
-
-    // NOTE: this will cause the column names to be restricted to not having = and ! in their names
-    //
-    //
-    // first check for any whitespaces
-
     let mut is_escaped_string = false;
     let mut escape_next = false;
 
@@ -72,8 +94,12 @@ fn tokenize(query: String) -> Vec<Token> {
             continue;
         }
 
+        // Intuition: in the terminal you can only use one of either double
+        // or single quotes since the other one is for specifying the params
+        // and that will lead to having to escape other occurences
+
         if is_escaped_string {
-            if c == SINGLE_QUOTE {
+            if c == SINGLE_QUOTE || c == DOUBLE_QUOTE {
                 is_escaped_string = false;
                 add_string_literal(&mut raw_token_list, &mut buffer);
                 continue;
@@ -83,21 +109,13 @@ fn tokenize(query: String) -> Vec<Token> {
             continue;
         }
 
-        if c == SINGLE_QUOTE {
+        if c == SINGLE_QUOTE || c == DOUBLE_QUOTE {
             is_escaped_string = true;
             continue;
         }
 
-
-        // TODO: Add checks on double sided operators for string literals on both sides.
-
         if c == EQUALS {
-            add_string_literal(&mut raw_token_list, &mut buffer);
-            raw_token_list.push(Token {
-                val: String::new(),
-                token_type: TokenType::Equal,
-            });
-
+            add_comparison_token(token_list, &mut buffer, TokenType::Equal);
             continue;
         }
 
@@ -107,12 +125,7 @@ fn tokenize(query: String) -> Vec<Token> {
                     panic!("Error in find syntax")
                 }
 
-                add_string_literal(&mut raw_token_list, &mut buffer);
-                raw_token_list.push(Token {
-                    val: String::new(),
-                    token_type: TokenType::NotEqual,
-                });
-
+                add_comparison_token(token_list, &mut buffer, TokenType::NotEqual);
                 continue;
             }
             panic!("Error in find syntax")
@@ -122,10 +135,7 @@ fn tokenize(query: String) -> Vec<Token> {
     }
 
     if buffer.len() > 0 {
-        raw_token_list.push(Token {
-            val: buffer.clone(),
-            token_type: TokenType::StringLiteral,
-        })
+        add_string_literal(&mut raw_token_list, &mut buffer);
     }
 
     let mut token_list: Vec<Token> = Vec::new();
@@ -163,4 +173,31 @@ fn add_condition_token(
     });
 
     parts.clear();
+}
+
+fn add_comparison_token(token_list: &mut Vec<Token>, buffer: &mut String, token_type: TokenType) {
+    add_string_literal(token_list, buffer);
+    token_list.push(Token {
+        val: String::new(),
+        token_type,
+    });
+}
+
+fn validate_token_list(token_list: &Vec<Token>) -> bool {
+    let op_tokens = [
+        TokenType::Equal,
+        TokenType::NotEqual,
+        TokenType::And,
+        TokenType::Or,
+        TokenType::Contains,
+    ];
+
+    return token_list.windows(3).all(|x| {
+        if op_tokens.contains(&x[1].token_type) {
+            return x[0].token_type == TokenType::StringLiteral
+                && x[2].token_type == TokenType::StringLiteral;
+        }
+
+        return true;
+    });
 }
