@@ -44,19 +44,21 @@ pub fn find(
     // build the execution tree
     // get the conditions
 
-
-    i.enumerate().filter(|(i, x)| {
-        // TODO: Add the conditions here after parsing
-    });
-
-    i
+    return Box::new(
+        i.enumerate()
+            .filter(|(i, x)| {
+                // TODO: Add the conditions here after parsing
+                return true;
+            })
+            .map(|(i, x)| x),
+    );
 }
 
 fn get_header_map(headers: &Vec<String>) -> HashMap<usize, String> {
-    let res: HashMap<usize, String> = HashMap::new();
+    let mut res: HashMap<usize, String> = HashMap::new();
 
     for (i, h) in headers.iter().enumerate() {
-        res.insert(i, h);
+        res.insert(i, h.to_owned());
     }
 
     return res;
@@ -115,7 +117,7 @@ fn tokenize(query: String) -> Vec<Token> {
         }
 
         if c == EQUALS {
-            add_comparison_token(token_list, &mut buffer, TokenType::Equal);
+            add_comparison_token(&mut raw_token_list, &mut buffer, TokenType::Equal);
             continue;
         }
 
@@ -125,7 +127,7 @@ fn tokenize(query: String) -> Vec<Token> {
                     panic!("Error in find syntax")
                 }
 
-                add_comparison_token(token_list, &mut buffer, TokenType::NotEqual);
+                add_comparison_token(&mut raw_token_list, &mut buffer, TokenType::NotEqual);
                 continue;
             }
             panic!("Error in find syntax")

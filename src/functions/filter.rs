@@ -10,7 +10,7 @@ pub fn filter(
     let mut i = i;
 
     if let Some(query) = args.find {
-        i = Box::new(super::find::find(i, query))
+        i = Box::new(super::find::find(i, query, headers))
     }
 
     // TODO: Change this to be handled via flags instead of subcommands
