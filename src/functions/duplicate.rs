@@ -8,7 +8,7 @@ pub fn print_duplicates(
     i: Box<dyn Iterator<Item = StringRecord>>,
     dup_rows: Vec<String>,
     headers: &Vec<String>,
-) {
+) -> String {
     let pos_list = select::get_selected_header_position_list(headers, dup_rows.clone());
     let pos_map = get_selected_header_position_map(headers, dup_rows);
 
@@ -54,10 +54,14 @@ pub fn print_duplicates(
             });
     });
 
-    duplicates_map.iter().for_each(|(i, x)| {
-        x.iter()
-            .for_each(|(j, x)| println!("Column: {}, Entry: {}, Count: {}", i, j, x))
-    });
+    duplicates_map
+        .iter()
+        .map(|(i, x)| {
+            x.iter()
+                .map(|(j, x)| format!("Column: {}, Entry: {}, Count: {}\n", i, j, x))
+                .collect::<String>()
+        })
+        .collect()
 }
 
 pub fn get_selected_header_position_map(

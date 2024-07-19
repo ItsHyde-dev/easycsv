@@ -25,11 +25,7 @@ struct Args {
     #[arg(long, action = Help)]
     help: Option<bool>,
 
-    #[arg(
-        long,
-        short,
-        long_help = "Select columns from the csv to show.",
-    )]
+    #[arg(long, short, long_help = "Select columns from the csv to show.")]
     select: Option<Vec<String>>,
 
     #[arg(long, short, long_help = "Select columns from the csv to exclude.")]
@@ -43,6 +39,9 @@ struct Args {
 
     #[arg(short = 'j', long)]
     display_json: bool,
+
+    #[arg(short, long)]
+    find: Option<String>,
 
     #[command(subcommand)]
     commands: Option<Commands>,
