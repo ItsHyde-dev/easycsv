@@ -26,11 +26,12 @@ pub fn display(
     i: Box<dyn Iterator<Item = StringRecord>>,
     headers: &Vec<String>,
 ) {
+    println!("reached here");
     match display_method {
         DisplayMethod::CSV => {
             println!("{}", headers.join(","));
             i.for_each(|x| {
-                println!("{}", x.as_slice());
+                println!("{}", x.iter().collect::<Vec<&str>>().join(","));
             });
         }
         DisplayMethod::OnlyHeaders => {

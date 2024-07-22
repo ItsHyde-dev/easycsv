@@ -1,6 +1,5 @@
 1. feature to ignore headers for long shell pipe commands
-2. experiment with using sqlite for enhancing performance
 
 ____________________________________
 
-create a syntax parser for find command
+2. Add a pre processing step to make the program process data much faster
