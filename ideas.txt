@@ -2,4 +2,4 @@
 
 ____________________________________
 
-2. Add a pre processing step to make the program process data much faster
+2. Add a pre processing step to make the program process data much faster (Use something like rg)

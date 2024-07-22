@@ -12,7 +12,7 @@ enum TokenType {
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
-struct Token {
+pub struct Token {
     val: String,
     token_type: TokenType,
 }
@@ -149,18 +149,9 @@ enum NodeType {
     Combination,
 }
 
-fn generate_ast(token_list: Vec<Token>) -> Option<Node> {
-    // get the nodes
-    // get the execution order (Precedence)
-    //
-    //
+pub fn generate_ast(token_list: Vec<Token>) -> Option<Node> {
     // Intuition: There will be no 2 operations that are linked to each other.
     // so we need not create a very complex tree structure
-
-    // you also always start with 3 then the extension which is 1 then 3 again
-    //
-    //
-    // TODO: Change the data type of children to an array of fixed length 2
 
     let mut curr_node_type = NodeType::Comparison;
     let mut i = 0;
@@ -196,12 +187,6 @@ fn generate_ast(token_list: Vec<Token>) -> Option<Node> {
         };
     }
 
-    // go through the res_node_list and create the actual tree structure
-    // we get the first 2 in the comp node list and add them using the first comb token
-    // we then add this node to the next comp node using the next comb token and so on
-
-    // a = b and c = d or d = a
-
     if comp_node_list.len() == 0 {
         return None;
     }
@@ -236,7 +221,7 @@ fn add_string_literal(token_list: &mut Vec<Token>, buffer: &mut String) {
     buffer.clear();
 }
 
-fn tokenize(query: String) -> Vec<Token> {
+pub fn tokenize(query: String) -> Vec<Token> {
     let mut buffer = String::new();
     let mut raw_token_list: Vec<Token> = Vec::new();
     let mut is_escaped_string = false;
@@ -343,7 +328,7 @@ fn add_comparison_token(token_list: &mut Vec<Token>, buffer: &mut String, token_
     });
 }
 
-fn validate_token_list(token_list: &Vec<Token>) -> bool {
+pub fn validate_token_list(token_list: &Vec<Token>) -> bool {
     let op_tokens = [
         TokenType::Equal,
         TokenType::NotEqual,
@@ -360,4 +345,44 @@ fn validate_token_list(token_list: &Vec<Token>) -> bool {
 
         return true;
     });
+}
+
+pub fn get_find_tokens(token_list: Vec<Token>) -> Vec<String> {
+    // Intuition: There will be no 2 operations that are linked to each other.
+    // so we need not create a very complex tree structure
+
+    let mut res = Vec::new();
+
+    let mut curr_node_type = NodeType::Comparison;
+    let mut i = 0;
+
+    loop {
+        match curr_node_type {
+            NodeType::Comparison => {
+                if i + 2 >= token_list.len() {
+                    break;
+                }
+
+                // do this only if the operation is a contains or equals
+                if token_list[i + 1].clone().token_type == TokenType::Equal
+                    || token_list[i + 1].clone().token_type == TokenType::Contains
+                {
+                    res.push(token_list[i + 2].clone().val);
+                }
+
+                curr_node_type = NodeType::Combination;
+                i += 3;
+                continue;
+            }
+            NodeType::Combination => {
+                if i + 1 >= token_list.len() {
+                    break;
+                }
+                curr_node_type = NodeType::Comparison;
+                i += 1;
+            }
+        };
+    }
+
+    return res;
 }

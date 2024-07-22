@@ -1,9 +1,12 @@
 use std::fs::File;
-use std::io::{self, Read};
+use std::io::{self, BufRead, BufReader, Read};
 
 use clap::ArgAction::Help;
 use clap::{Parser, Subcommand};
-use csv::ReaderBuilder;
+use functions::find::{get_find_tokens, tokenize, validate_token_list};
+use grep::regex::RegexMatcher;
+use grep::searcher::sinks::UTF8;
+use grep::searcher::SearcherBuilder;
 mod functions;
 mod modules;
 
@@ -75,7 +78,7 @@ fn main() {
         libc::signal(libc::SIGPIPE, libc::SIG_DFL);
     }
 
-    let input: Box<dyn Read> = if atty::isnt(atty::Stream::Stdin) {
+    let mut input: Box<dyn Read> = if atty::isnt(atty::Stream::Stdin) {
         Box::new(io::stdin())
     } else if let Some(ref file_path) = args.file_path {
         Box::new(File::open(file_path).expect("Unable to open file"))
@@ -84,8 +87,60 @@ fn main() {
         std::process::exit(1);
     };
 
-    let csv_reader = ReaderBuilder::new().from_reader(input);
+    let filtered_res: Vec<String>;
+    let headers: String;
 
-    // modules::arg_parser::switch_args(args, csv_reader)
-    modules::arg_parser::switch_args(args, csv_reader)
+    if let Some(query) = args.find {
+        let token_list = tokenize(query);
+
+        // sanitize the token list to check if there are any problems with the syntax
+        if !validate_token_list(&token_list) {
+            panic!("Error in find syntax");
+        }
+
+        // build the execution tree
+        let terms = get_find_tokens(token_list);
+
+        (headers, filtered_res) = search_in_input(input, &terms).unwrap();
+    } else {
+        let mut buf = String::new();
+        let _ = input.read_to_string(&mut buf);
+        let lines: Vec<String> = buf.split("\n").map(|x| x.to_string()).collect();
+        if lines.len() == 0 {
+            return;
+        }
+
+        headers = lines[0].clone();
+        filtered_res = lines.iter().skip(1).map(|x| x.to_owned()).collect();
+    }
+
+    dbg!(headers, filtered_res);
+
+    // let csv_reader = ReaderBuilder::new().from_reader(input);
+
+    modules::arg_parser::switch_args(args, headers, filtered_res);
+}
+
+fn search_in_input<R: Read>(input: R, terms: &Vec<String>) -> io::Result<(String, Vec<String>)> {
+    let mut results = Vec::new();
+    let mut reader = BufReader::new(input);
+
+    let mut first_line = String::new();
+    let _ = reader.read_line(&mut first_line);
+
+    for term in terms {
+        let matcher = RegexMatcher::new(term).unwrap();
+        let mut searcher = SearcherBuilder::new().build();
+
+        searcher.search_reader(
+            &matcher,
+            &mut reader,
+            UTF8(|_, line| {
+                results.push(line.to_string());
+                Ok(true)
+            }),
+        )?;
+    }
+
+    Ok((first_line, results))
 }
