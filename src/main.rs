@@ -1,8 +1,9 @@
 use std::fs::File;
-use std::io::{self, BufRead, BufReader, Read};
+use std::io::{self, BufRead, BufReader, Cursor, Read};
 
 use clap::ArgAction::Help;
 use clap::{Parser, Subcommand};
+use csv::ReaderBuilder;
 use functions::find::{get_find_tokens, tokenize, validate_token_list};
 use grep::regex::RegexMatcher;
 use grep::searcher::sinks::UTF8;
@@ -78,7 +79,7 @@ fn main() {
         libc::signal(libc::SIGPIPE, libc::SIG_DFL);
     }
 
-    let mut input: Box<dyn Read> = if atty::isnt(atty::Stream::Stdin) {
+    let input: Box<dyn Read> = if atty::isnt(atty::Stream::Stdin) {
         Box::new(io::stdin())
     } else if let Some(ref file_path) = args.file_path {
         Box::new(File::open(file_path).expect("Unable to open file"))
@@ -87,10 +88,9 @@ fn main() {
         std::process::exit(1);
     };
 
-    let filtered_res: Vec<String>;
-    let headers: String;
+    let filtered_input: Box<dyn Read>;
 
-    if let Some(query) = args.find {
+    if let Some(query) = args.clone().find {
         let token_list = tokenize(query);
 
         // sanitize the token list to check if there are any problems with the syntax
@@ -101,27 +101,21 @@ fn main() {
         // build the execution tree
         let terms = get_find_tokens(token_list);
 
-        (headers, filtered_res) = search_in_input(input, &terms).unwrap();
-    } else {
-        let mut buf = String::new();
-        let _ = input.read_to_string(&mut buf);
-        let lines: Vec<String> = buf.split("\n").map(|x| x.to_string()).collect();
-        if lines.len() == 0 {
-            return;
-        }
+        let filtered_res = search_in_input(input, &terms).unwrap();
+        let csv_data = filtered_res.join("\n");
 
-        headers = lines[0].clone();
-        filtered_res = lines.iter().skip(1).map(|x| x.to_owned()).collect();
+        // Create a Cursor from the String
+        filtered_input = Box::new(Cursor::new(csv_data));
+    } else {
+        filtered_input = input;
     }
 
-    dbg!(headers, filtered_res);
+    let csv_reader = ReaderBuilder::new().from_reader(filtered_input);
 
-    // let csv_reader = ReaderBuilder::new().from_reader(input);
-
-    modules::arg_parser::switch_args(args, headers, filtered_res);
+    modules::arg_parser::switch_args(args, csv_reader);
 }
 
-fn search_in_input<R: Read>(input: R, terms: &Vec<String>) -> io::Result<(String, Vec<String>)> {
+fn search_in_input<R: Read>(input: R, terms: &Vec<String>) -> io::Result<Vec<String>> {
     let mut results = Vec::new();
     let mut reader = BufReader::new(input);
 
@@ -142,5 +136,7 @@ fn search_in_input<R: Read>(input: R, terms: &Vec<String>) -> io::Result<(String
         )?;
     }
 
-    Ok((first_line, results))
+    results.insert(0, first_line);
+
+    Ok(results)
 }

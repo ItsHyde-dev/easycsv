@@ -15,8 +15,8 @@ pub fn switch_args(args: Args, mut reader: Reader<Box<dyn Read>>) {
         .map(|x| x.to_owned())
         .collect();
 
-
     let selected = select::select(Box::new(reader.into_records()), args.clone(), &headers);
+
     let filtered = filter::filter(selected, args.clone(), &headers);
 
     match aggregate::aggregate_output_check(&args) {

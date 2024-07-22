@@ -49,6 +49,7 @@ const SINGLE_QUOTE: char = '\'';
 const DOUBLE_QUOTE: char = '\"';
 const EQUALS: char = '=';
 const EXCLAMATION: char = '!';
+const CONTAINS: char = '~';
 const WHITESPACE: char = ' ';
 
 pub fn find(
@@ -87,7 +88,7 @@ pub fn find(
 }
 
 #[derive(Clone, Debug)]
-struct Node {
+pub struct Node {
     token: Token,
     left: Option<Box<Node>>,
     right: Option<Box<Node>>,
@@ -262,6 +263,11 @@ pub fn tokenize(query: String) -> Vec<Token> {
 
         if c == EQUALS {
             add_comparison_token(&mut raw_token_list, &mut buffer, TokenType::Equal);
+            continue;
+        }
+
+        if c == CONTAINS {
+            add_comparison_token(&mut raw_token_list, &mut buffer, TokenType::Contains);
             continue;
         }
 

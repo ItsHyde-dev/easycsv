@@ -26,7 +26,6 @@ pub fn display(
     i: Box<dyn Iterator<Item = StringRecord>>,
     headers: &Vec<String>,
 ) {
-    println!("reached here");
     match display_method {
         DisplayMethod::CSV => {
             println!("{}", headers.join(","));
