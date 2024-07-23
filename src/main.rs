@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{self, BufRead, BufReader, Cursor, Read};
 
 use clap::ArgAction::Help;
-use clap::{Parser, Subcommand};
+use clap::Parser;
 use csv::ReaderBuilder;
 use functions::find::{get_find_tokens, tokenize, validate_token_list};
 use grep::regex::RegexMatcher;
@@ -47,28 +47,8 @@ struct Args {
     #[arg(short, long)]
     find: Option<String>,
 
-    #[command(subcommand)]
-    commands: Option<Commands>,
-
     // path to the file
     file_path: Option<String>,
-}
-
-#[derive(Subcommand, Debug, Clone)]
-enum Commands {
-    Find {
-        #[arg(short, long)]
-        columns: Option<Vec<String>>,
-
-        #[arg(long, action = Help)]
-        help: Option<bool>,
-
-        /// Number of rows to display
-        #[arg(long, short)]
-        head: Option<u32>,
-
-        query: String,
-    },
 }
 
 fn main() {
