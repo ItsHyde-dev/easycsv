@@ -1,5 +1,2 @@
 1. feature to ignore headers for long shell pipe commands
-
-____________________________________
-
-2. Add a pre processing step to make the program process data much faster (Use something like rg)
+2. explore projects like rayon that can help in parallelization

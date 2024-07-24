@@ -38,12 +38,14 @@ pub fn select<'a>(
     i: Box<dyn Iterator<Item = Result<StringRecord, Error>> + 'a>,
     args: Args,
     headers: &Vec<String>,
-) -> Box<dyn Iterator<Item = StringRecord> + 'a> {
+) -> (Box<dyn Iterator<Item = StringRecord> + 'a>, Vec<String>) {
     let selected_headers = get_selected(
         args.clone().select.unwrap_or(Vec::new()),
         args.clone().exclude.unwrap_or(Vec::new()),
         &headers,
     );
+
+    let selected_headers_clone = selected_headers.clone();
 
     let s = i.map(move |rec| {
         rec.unwrap_or(StringRecord::new())
@@ -54,5 +56,17 @@ pub fn select<'a>(
             .collect::<StringRecord>()
     });
 
-    return Box::new(s);
+    let h: Vec<String> = headers
+        .iter()
+        .enumerate()
+        .filter_map(|(i, x)| {
+            if selected_headers_clone.contains(&i) {
+                return Some(x.to_string());
+            }
+
+            return None;
+        })
+        .collect();
+
+    return (Box::new(s), h);
 }

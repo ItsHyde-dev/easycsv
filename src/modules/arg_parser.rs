@@ -8,14 +8,15 @@ use crate::{
 };
 
 pub fn switch_args(args: Args, mut reader: Reader<Box<dyn Read>>) {
-    let headers: Vec<String> = reader
+    let mut headers: Vec<String> = reader
         .headers()
         .unwrap()
         .iter()
         .map(|x| x.to_owned())
         .collect();
 
-    let selected = select::select(Box::new(reader.into_records()), args.clone(), &headers);
+    let (selected, headers) =
+        select::select(Box::new(reader.into_records()), args.clone(), &mut headers);
 
     let filtered = filter::filter(selected, args.clone(), &headers);
 
