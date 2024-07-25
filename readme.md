@@ -28,7 +28,7 @@ To build easycsv from source, follow these steps:
 1. **Clone the repository**:
 
     ```sh
-    git clone https://github.com/yourusername/easycsv.git
+    git clone https://github.com/ItsHyde-dev/easycsv.git
     ```
 
 2. **Navigate to the project directory**:
