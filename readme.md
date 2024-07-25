@@ -55,16 +55,10 @@ easycsv [OPTIONS] <CSV_FILE>
 
 ### Examples
 
-- **Filter rows**:
-
-  ```sh
-  easycsv --filter "age > 30" data.csv
-  ```
-
 - **Find data in specific columns**:
 
   ```sh
-  easycsv --query "name ~ 'John' and age != 25" data.csv
+  easycsv --find "name ~ 'John' and age != 25" data.csv
   ```
 
 - **Count rows**:
