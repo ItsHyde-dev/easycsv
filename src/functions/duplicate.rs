@@ -54,14 +54,16 @@ pub fn print_duplicates(
             });
     });
 
-    duplicates_map
+    let res: String = duplicates_map
         .iter()
         .map(|(i, x)| {
             x.iter()
-                .map(|(j, x)| format!("Column: {}, Entry: {}, Count: {}\n", i, j, x))
+                .map(|(j, x)| format!("\n{},{},{}", i, j, x))
                 .collect::<String>()
         })
-        .collect()
+        .collect();
+
+    return "Column,Item,Count".to_string() + &res;
 }
 
 pub fn get_selected_header_position_map(
