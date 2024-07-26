@@ -1,6 +1,6 @@
 [package]
 name = "easycsv"
-version = "0.2.5"
+version = "0.2.9"
 edition = "2021"
 description = "A command line csv parser and toolkit for navigating and filtering data from csv files"
 license = "MIT OR Apache-2.0"
